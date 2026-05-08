@@ -79,7 +79,21 @@ function Home() {
           <div className="home-monsters">
             {monsters.map(m => {
               const name = monsterName(m);
-              return (<div className="home-monster" key={m.id}>{name} - {m.task}</div>);
+              return (<div className="font-sans p-2 bg-slate-700 rounded-sm text-slate-100" key={m.id}>
+                {name} - {m.task}
+                <div className="flex gap-x-2">
+                  <div className="flex flex-col grow">
+                    <input className="bg-slate-600 rounded-sm" name='prefix' />
+                    <label className="ml-2 text-slate-400 font-bold text-sm" htmlFor='prefix'>PREFIX</label>
+                  </div>
+                  <div className="flex flex-col grow">
+                    <select className="bg-slate-600 rounded-sm" name='monster' value={"m.kind"} onChange={() => {}}>
+                      <option value={"m.kind"}>{m.kind}</option>
+                    </select>
+                    <label className="ml-2 text-slate-400 font-bold text-sm" htmlFor='monster'>MONSTER</label>
+                  </div>
+                </div>
+              </div>);
             })}
           </div>
         </div>
