@@ -15,20 +15,20 @@ export async function generateGuest() {
     session: await createSession(),
     class_: "Scholar",
     monsters: [
-      {
-        name: "Dust Golem",
-        task: "fold the mountain",
-        level: 8,
-        currentHp: 5,
-        maxHp: 10,
-      },
-      {
-        name: "Caffeine Wraith",
-        task: "no coffee after 2pm",
-        level: "boss",
-        currentHp: 1,
-        maxHp: 1,
-      },
+      // {
+      //   name: "Dust Golem",
+      //   task: "fold the mountain",
+      //   level: 8,
+      //   currentHp: 5,
+      //   maxHp: 10,
+      // },
+      // {
+      //   name: "Caffeine Wraith",
+      //   task: "no coffee after 2pm",
+      //   level: "boss",
+      //   currentHp: 1,
+      //   maxHp: 1,
+      // },
     ]
   }
 }

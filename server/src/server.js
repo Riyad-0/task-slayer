@@ -94,6 +94,32 @@ app.post("/api/class", async (req, res) => {
   }
 });
 
+app.post("/api/monsters", async (req, res) => {
+  const monsters = req.body.monsters;
+  if (!Array.isArray(monsters)) {
+    res.json({ result: "invalid monsters" });
+    return;
+  }
+  const sessionId = req.cookies[sessionCookieName];
+  if (sessionId !== undefined) {
+    const foundUser = await getUserBySessionId(sessionId);
+    if (foundUser !== undefined) {
+      foundUser.monsters = monsters;
+      await dataFile.updateUser(foundUser);
+      res.json({ result: "success", profile: getProfile(foundUser) });
+    } else {
+      res.json({ result: "session expired" });
+    }
+  } else {
+    const guest = await generateGuest();
+    guest.monsters = monsters;
+    await dataFile.addUser(guest);
+    res
+      .cookie(sessionCookieName, guest.session.id, sessionCookieOptions)
+      .json({ result: "success", profile: getProfile(guest) });
+  }
+});
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
