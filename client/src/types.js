@@ -35,7 +35,7 @@
 
 const classes = /** @type {const} */ (["Warrior", "Scholar", "Bard", "Monk"]);
 
-const monsterKinds = /** @type {const} */ ([
+export const monsterKinds = /** @type {const} */ ([
   "Demon",
   "Dragon",
   "Cyclops",
@@ -102,4 +102,13 @@ export function randomMonsterKind() {
  */
 export function monsterName(monster) {
   return `${monster.taskName} ${monster.kind}`;
+}
+
+/**
+ * 
+ * @param {any} monsterKind 
+ * @returns {monsterKind is MonsterKind}
+ */
+export function isMonsterKind(monsterKind) {
+  return monsterKinds.includes(monsterKind);
 }

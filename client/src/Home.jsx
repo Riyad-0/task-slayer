@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { monsterName, randomMonsterKind } from "./types";
+import { isMonsterKind, monsterKinds, monsterName, randomMonsterKind } from "./types";
 import logo from "./assets/logo.png";
 import MiniNav from "./MiniNav";
 import Nav from "./Nav";
@@ -79,18 +79,71 @@ function Home() {
           <div className="home-monsters">
             {monsters.map(m => {
               const name = monsterName(m);
+              /** @type {React.ChangeEventHandler<HTMLInputElement, HTMLInputElement>} */
+              function onChangeTaskName(e) {
+                setMonsters(monsters.map(x => {
+                  if (x.id === m.id) {
+                    return {
+                      ...m,
+                      taskName: e.target.value,
+                    };
+                  } else {
+                    return m;
+                  }
+                }));
+              }
+              /** @type {React.ChangeEventHandler<HTMLInputElement, HTMLInputElement>} */
+              function onChangeTask(e) {
+                setMonsters(monsters.map(x => {
+                  if (x.id === m.id) {
+                    return {
+                      ...m,
+                      task: e.target.value,
+                    };
+                  } else {
+                    return m;
+                  }
+                }));
+              }
+              /** @type {React.ChangeEventHandler<HTMLSelectElement, HTMLSelectElement>} */
+              function onChangeMonsterKind(e) {
+                const kind = e.target.value;
+                if (!isMonsterKind(kind)) {
+                  return;
+                }
+                setMonsters(monsters.map(x => {
+                  if (x.id === m.id) {
+                    return {
+                      ...m,
+                      kind,
+                    };
+                  } else {
+                    return m;
+                  }
+                }));
+              }
+              
               return (<div className="font-sans p-2 bg-slate-700 rounded-sm text-slate-100" key={m.id}>
-                {name} - {m.task}
-                <div className="flex gap-x-2">
-                  <div className="flex flex-col grow">
-                    <input className="bg-slate-600 rounded-sm" name='prefix' />
-                    <label className="ml-2 text-slate-400 font-bold text-sm" htmlFor='prefix'>PREFIX</label>
+                <div className="flex flex-col gap-y-2">
+                  <div>{name} - {m.task}</div>
+                  <div className="flex gap-x-2">
+                    <div className="flex flex-col min-w-0">
+                      <input className="bg-slate-600 rounded-sm px-2 py-0.5 min-w-0" name='prefix' value={m.taskName} onChange={onChangeTaskName}/>
+                      <label className="ml-2 text-slate-400 font-bold text-sm" htmlFor='prefix'>PREFIX</label>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <select className="bg-slate-600 rounded-sm px-1 py-0.5" name='monster' value={m.kind} onChange={onChangeMonsterKind}>
+                        {monsterKinds.map(kind => {
+                          return (<option key={kind} value={kind}>{kind}</option>);
+                        })}
+                      </select>
+                      <label className="ml-2 text-slate-400 font-bold text-sm" htmlFor='monster'>MONSTER</label>
+                    </div>
                   </div>
-                  <div className="flex flex-col grow">
-                    <select className="bg-slate-600 rounded-sm" name='monster' value={"m.kind"} onChange={() => {}}>
-                      <option value={"m.kind"}>{m.kind}</option>
-                    </select>
-                    <label className="ml-2 text-slate-400 font-bold text-sm" htmlFor='monster'>MONSTER</label>
+                  <div className="flex flex-col">
+                    <input className="bg-slate-600 rounded-sm px-2 py-0.5" name='monster' value={m.task} onChange={onChangeTask} />
+                    <label className="ml-2 text-slate-400 font-bold text-sm" htmlFor='monster'>TASK</label>
                   </div>
                 </div>
               </div>);
