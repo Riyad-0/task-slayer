@@ -1,4 +1,4 @@
-import dataFile from "./dataFile";
+import data from "./data";
 /** @import { Guest, Session, User } from "./types" */
 
 /**
@@ -6,7 +6,7 @@ import dataFile from "./dataFile";
  * @returns {Promise<User | undefined>}
  */
 export async function getUserBySessionId(sessionId) {
-  return (await dataFile.getUsers()).find(user => user.session.id === sessionId);
+  return (await data.getUsers()).find(user => user.session.id === sessionId);
 }
 
 /** @returns {Promise<Guest>} */
@@ -44,7 +44,7 @@ async function createSession() {
 async function generateSessionId() {
   while (true) {
     const generatedCookie = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString();
-    const isCookieInUse = (await dataFile.getUsers()).some(user =>
+    const isCookieInUse = (await data.getUsers()).some(user =>
       user.session.id === generatedCookie
     );
     if (!isCookieInUse) {

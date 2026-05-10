@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import dataFile from "./dataFile";
+import { User as DbUser } from "./models/User";
 /** @import { User } from "./types" */
 
 /** @type {"local" | "remote"} */
@@ -33,7 +34,16 @@ async function getUsers() {
       return await dataFile.getUsers();
     }
     case "remote": {
-      throw "uh oh";
+      return (await DbUser.find()).map(dbUser => {
+        return {
+          session: {
+            id: dbUser._id,
+            created: dbUser.sessionCreated,
+          },
+          class_: dbUser.class_,
+          monsters: dbUser.monsters,
+        };
+      });
     }
   }
 }
@@ -44,10 +54,16 @@ async function getUsers() {
 async function addUser(user) {
   switch (env) {
     case "local": {
-      dataFile.addUser(user);
+      await dataFile.addUser(user);
       break;
     }
     case "remote": {
+      await DbUser.insertOne({
+        _id: user.session.id,
+        sessionCreated: user.session.created,
+        class_: user.class_,
+        monsters: user.monsters,
+      });
       break;
     }
   }
@@ -59,16 +75,23 @@ async function addUser(user) {
 async function updateUser(user) {
   switch (env) {
     case "local": {
-      dataFile.updateUser(user);
+      await dataFile.updateUser(user);
       break;
     }
     case "remote": {
+      await DbUser.updateOne(user, {
+        _id: user.session.id,
+        sessionCreated: user.session.created,
+        class_: user.class_,
+        monsters: user.monsters,
+      });
       break;
     }
   }
 }
 
 const data = {
+  init,
   getUsers,
   addUser,
   updateUser,

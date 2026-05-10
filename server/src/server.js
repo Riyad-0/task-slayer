@@ -46,9 +46,7 @@ app.get('/api/health', (req, res) => {
 import { generateMonsterData } from './services/aiService';
 import { generateGuest, getUserBySessionId } from './user';
 import { getProfile } from './profile';
-import dataFile from './dataFile';
-import { exit } from 'process';
-import { data } from './data';
+import data from './data';
 app.post('/api/summon', async (req, res) => {
   const { description } = req.body;
   const monster = await generateMonsterData(description);
@@ -69,7 +67,9 @@ app.get('/api/profile', async (req, res) => {
     }
   } else {
     const guest = await generateGuest();
-    await dataFile.addUser(guest);
+    await data.addUser(guest);
+        console.log("None!");
+
     res
       .cookie(sessionCookieName, guest.session.id, sessionCookieOptions)
       .json({ result: "success", profile: getProfile(guest)});
@@ -87,7 +87,7 @@ app.post("/api/class", async (req, res) => {
     const foundUser = await getUserBySessionId(sessionId);
     if (foundUser !== undefined) {
       foundUser.class_ = class_;
-      await dataFile.updateUser(foundUser);
+      await data.updateUser(foundUser);
       res.json({ result: "success", profile: getProfile(foundUser) });
     } else {
       res.json({ result: "session expired" });
@@ -95,7 +95,7 @@ app.post("/api/class", async (req, res) => {
   } else {
     const guest = await generateGuest();
     guest.class_ = class_;
-    await dataFile.addUser(guest);
+    await data.addUser(guest);
     res
       .cookie(sessionCookieName, guest.session.id, sessionCookieOptions)
       .json({ result: "success", profile: getProfile(guest) });
@@ -113,7 +113,7 @@ app.post("/api/monsters", async (req, res) => {
     const foundUser = await getUserBySessionId(sessionId);
     if (foundUser !== undefined) {
       foundUser.monsters = monsters;
-      await dataFile.updateUser(foundUser);
+      await data.updateUser(foundUser);
       res.json({ result: "success", profile: getProfile(foundUser) });
     } else {
       res.json({ result: "session expired" });
@@ -121,7 +121,7 @@ app.post("/api/monsters", async (req, res) => {
   } else {
     const guest = await generateGuest();
     guest.monsters = monsters;
-    await dataFile.addUser(guest);
+    await data.addUser(guest);
     res
       .cookie(sessionCookieName, guest.session.id, sessionCookieOptions)
       .json({ result: "success", profile: getProfile(guest) });
