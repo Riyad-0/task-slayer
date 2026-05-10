@@ -18,6 +18,13 @@
  * @property {Level} level
  * @property {number} currentHp
  * @property {number} maxHp
+ * @property {string} frequencyMagnitude
+ * @property {FrequencyUnit} frequencyUnit
+ * @property {number | null} deadline // In milliseconds; null if frequencyMagnitude is invalid.
+ */
+
+/**
+ * @typedef {frequencyUnits[number]} FrequencyUnit
  */
 
 /**
@@ -56,6 +63,16 @@ export const monsterKinds = /** @type {const} */ ([
 
 /** @type {Class} */
 export const defaultClass = classes[0];
+
+export const frequencyUnits = /** @type {const} */ ([
+  "second",
+  "minute",
+  "hour",
+  "day",
+  "week",
+  "month",
+  "year",
+]);
 
 /**
  * 
@@ -111,4 +128,13 @@ export function monsterName(monster) {
  */
 export function isMonsterKind(monsterKind) {
   return monsterKinds.includes(monsterKind);
+}
+
+/**
+ * 
+ * @param {any} unit 
+ * @returns {unit is FrequencyUnit}
+ */
+export function isFrequencyUnit(unit) {
+  return frequencyUnits.includes(unit);
 }

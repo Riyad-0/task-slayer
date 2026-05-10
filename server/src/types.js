@@ -28,11 +28,25 @@
 
 /**
  * @typedef {object} Monster
- * @property {string} name
+ * @property {number} id
+ * @property {string} taskName
+ * @property {MonsterKind} kind
  * @property {string} task
  * @property {Level} level
  * @property {number} currentHp
  * @property {number} maxHp
+ * @property {string} frequencyMagnitude
+ * @property {FrequencyUnit} frequencyUnit
+ * @property {number | null} deadline // In milliseconds; null if frequencyMagnitude is invalid.
+ */
+
+/**
+ * @typedef {frequencyUnits[number]} FrequencyUnit
+ */
+
+/**
+ * 
+ * @typedef {monsterKinds[number]} MonsterKind 
  */
 
 /**
@@ -44,6 +58,35 @@
  */
 
 const classes = /** @type {const} */ (["Warrior", "Scholar", "Bard", "Monk"]);
+
+export const monsterKinds = /** @type {const} */ ([
+  "Demon",
+  "Dragon",
+  "Cyclops",
+  "Goblin",
+  "Golem",
+  "Gorgon",
+  "Hydra",
+  "Kraken",
+  "Mummy",
+  "Serpent",
+  "Skeleton",
+  "Vampire",
+  "Werewolf",
+  "Witch",
+  "Wraith",
+  "Zombie",
+]);
+
+export const frequencyUnits = /** @type {const} */ ([
+  "second",
+  "minute",
+  "hour",
+  "day",
+  "week",
+  "month",
+  "year",
+]);
 
 /**
  * 
