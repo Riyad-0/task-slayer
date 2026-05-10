@@ -95,17 +95,18 @@ function Home() {
       }
     }
     const level = randomLevel();
-    const frequencyMagnitude = 1;
-    const frequencyUnit = 'day';
+    const frequencyMagnitude = 5;
+    const frequencyUnit = 'second';
     const deadline = getDeadline(frequencyMagnitude, frequencyUnit);
+    const hp = 2;
     updateMonsters([
       ...monsters,
       {
         id,
         taskName,
         kind: monsterKind,
-        maxHp: 10,
-        currentHp: 10,
+        maxHp: hp,
+        currentHp: hp,
         task,
         level,
         frequencyMagnitude: frequencyMagnitude.toString(),
@@ -244,15 +245,11 @@ function MonsterView({ monster, monsters, setMonsters, switchToEdit }) {
   }
   function attack() {
     const newHp = Math.max(monster.currentHp - 1, 0);
-    if (newHp === 0) {
-      setMonsters(monsters.filter(found => found.id !== monster.id));
-    } else {
-      setMonster({
-        ...monster,
-        currentHp: newHp,
-        deadline: tryAdvanceDeadline(monster),
-      });
-    }
+    setMonster({
+      ...monster,
+      currentHp: newHp,
+      deadline: tryAdvanceDeadline(monster),
+    });
   }
   const level = formatLevel(monster.level);
   const hp = monster.currentHp / monster.maxHp * 100;
@@ -280,8 +277,7 @@ function MonsterView({ monster, monsters, setMonsters, switchToEdit }) {
                   style={{ width: `${hp}%` }}
                 ></div>
               </div>
-              <AttackButtonOrCompleted monster={monster} attack={attack} />
-              {/* <button onClick={onClickAttack} className="cursor-pointer bg-sky-600 h-7 rounded-[14px] w-full" >Attack</button> */}
+              <AttackButtonOrStatus monster={monster} attack={attack} />
             </div>
           </div>
         </div>
@@ -296,7 +292,7 @@ function MonsterView({ monster, monsters, setMonsters, switchToEdit }) {
  *   attack: () => void
  * }} props 
  */
-function AttackButtonOrCompleted({ monster, attack }) {
+function AttackButtonOrStatus({ monster, attack }) {
   const [_, setTime] = useState(Date.now());
   useEffect(() => {
     const interval = setInterval(() => {
@@ -307,9 +303,11 @@ function AttackButtonOrCompleted({ monster, attack }) {
     };
   }, []);
   return (
-    isTaskCompleted(monster) ?
-      <div className="flex bg-green-600 h-7 rounded-[14px] w-full items-center justify-center" >Pacified</div> :
-      <button onClick={attack} className="cursor-pointer bg-sky-600 h-7 rounded-[14px] w-full" >Attack</button>
+    monster.currentHp === 0 ?
+      <div className="flex bg-green-800 h-7 rounded-[14px] w-full items-center justify-center" >Slain</div> :
+      isTaskCompleted(monster) ?
+        <div className="flex bg-green-600 h-7 rounded-[14px] w-full items-center justify-center" >Pacified</div> :
+        <button onClick={attack} className="cursor-pointer bg-sky-600 h-7 rounded-[14px] w-full" >Attack</button>
   );
 }
 
@@ -321,7 +319,6 @@ function AttackButtonOrCompleted({ monster, attack }) {
  * }} props 
  */
 function MonsterFrequency({ monster, setMonster }) {
-  
   const frequencyMagnitude = parseFrequencyMagnitude(monster.frequencyMagnitude);
   const frequencyResult = formatFrequency(monster.frequencyMagnitude, monster.frequencyUnit);
   return (
@@ -349,27 +346,37 @@ function MonsterFrequency({ monster, setMonster }) {
  */
 function ValidMonsterFrequency({ monster, setMonster, frequencyMagnitude, frequencyString, deadline }) {
   const [time, setTime] = useState(Date.now());
+  const period = getPeriod(frequencyMagnitude, monster.frequencyUnit);
+  const periodEnd = isTaskCompleted(monster) ? 
+    (deadline - period) :
+    deadline;
   useEffect(() => {
     const interval = setInterval(() => {
-      if (Date.now() > deadline) {
+      if (Date.now() > periodEnd) {
         const deadline = tryGetDeadline(monster.frequencyMagnitude, monster.frequencyUnit);
-        setMonster({
-          ...monster,
-          deadline,
-        });
+        if (monster.currentHp === 0) {
+          const hp = monster.currentHp === 0 ? monster.maxHp : monster.currentHp;
+          const level = randomLevel();
+          setMonster({
+            ...monster,
+            currentHp: hp,
+            level,
+            deadline,
+          });
+        } else {
+          setMonster({
+            ...monster,
+            deadline,
+          });
+        }
       }
       setTime(Date.now());
     }, 67);
     return () => {
       clearInterval(interval);
     };
-  }, [deadline]);
-
-  const period = getPeriod(frequencyMagnitude, monster.frequencyUnit);
-
-  const timeLeft = isTaskCompleted(monster) ? 
-    deadline - period - time :
-    deadline - time;
+  }, [monster]);
+  const timeLeft = periodEnd - time;
   const p = Math.max(Math.min(timeLeft / period, 1), 0);
   return (
     <div className="flex items-center gap-x-2">
