@@ -8,7 +8,13 @@ import cookieParser from 'cookie-parser';
 import { isClass } from './types';
 /** @import { Class, Guest, Session, User } from "./types" */
 
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +47,7 @@ import { generateMonsterData } from './services/aiService';
 import { generateGuest, getUserBySessionId } from './user';
 import { getProfile } from './profile';
 import dataFile from './dataFile';
+import { exit } from 'process';
 app.post('/api/summon', async (req, res) => {
   const { description } = req.body;
   const monster = await generateMonsterData(description);
@@ -120,7 +127,17 @@ app.post("/api/monsters", async (req, res) => {
   }
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (process.env.MONGODB_URI === undefined) {
+  console.error("Expected 'MONGODB_URI' environment variable");
+} else {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log("Connected to MongoDB Atlas");
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    })
+    .catch(err => {
+      console.error("MongoDB connection error:", err);
+    });
+}
