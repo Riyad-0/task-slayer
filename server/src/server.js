@@ -48,6 +48,7 @@ import { generateGuest, getUserBySessionId } from './user';
 import { getProfile } from './profile';
 import dataFile from './dataFile';
 import { exit } from 'process';
+import { data } from './data';
 app.post('/api/summon', async (req, res) => {
   const { description } = req.body;
   const monster = await generateMonsterData(description);
@@ -127,17 +128,23 @@ app.post("/api/monsters", async (req, res) => {
   }
 });
 
-if (process.env.MONGODB_URI === undefined) {
-  console.error("Expected 'MONGODB_URI' environment variable");
-} else {
-  mongoose.connect(process.env.MONGODB_URI)
-    .then(() => {
-      console.log("Connected to MongoDB Atlas");
-      app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-      });
-    })
-    .catch(err => {
-      console.error("MongoDB connection error:", err);
-    });
-}
+data.init().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+});
+
+// if (process.env.MONGODB_URI === undefined) {
+//   console.error("Expected 'MONGODB_URI' environment variable");
+// } else {
+//   mongoose.connect(process.env.MONGODB_URI)
+//     .then(() => {
+//       console.log("Connected to MongoDB Atlas");
+//       app.listen(PORT, () => {
+//         console.log(`Server running on port ${PORT}`);
+//       });
+//     })
+//     .catch(err => {
+//       console.error("MongoDB connection error:", err);
+//     });
+// }
