@@ -6,6 +6,7 @@ import ClassPage from "./ClassPage";
 import Home from './Home';
 import './global.css';
 import Test from './Test';
+import { createContext } from 'react';
 
 function InsideRouter() {
   return (

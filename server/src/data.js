@@ -79,9 +79,7 @@ async function updateUser(user) {
       break;
     }
     case "remote": {
-      await DbUser.updateOne(user, {
-        _id: user.session.id,
-        sessionCreated: user.session.created,
+      DbUser.findByIdAndUpdate(user.session.id, {
         class_: user.class_,
         monsters: user.monsters,
       });
