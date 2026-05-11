@@ -7,7 +7,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "tsx src/server.js",
-    "dev": "tsx watch --clear-screen=false src/server.js"
+    "dev": "tsx watch --clear-screen=false src/server.js",
+    "build": "ncc build src/server.js -o dist"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",
