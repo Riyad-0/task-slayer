@@ -25,6 +25,7 @@
     "@types/express": "^5.0.6",
     "@types/helmet": "^0.0.48",
     "@types/morgan": "^1.9.10",
+    "ncc": "^0.3.6",
     "tsx": "^4.21.0"
   }
 }
