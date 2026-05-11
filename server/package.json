@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Task Slayer Backend",
-  "main": "src/server.js",
+  "main": "dist/index.js",
   "scripts": {
     "start": "tsx src/server.js",
     "dev": "tsx watch --clear-screen=false src/server.js",
