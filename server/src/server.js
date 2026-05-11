@@ -44,7 +44,7 @@ app.get('/api/health', (req, res) => {
 
 // AI Test Route (Person D)
 import { generateMonsterData } from './services/aiService';
-import { generateGuest, getUserBySessionId } from './user';
+import { generateGuest, generateGuestWithId, getUserBySessionId } from './user';
 import { getProfile } from './profile';
 import data from './data';
 app.post('/api/summon', async (req, res) => {
@@ -63,16 +63,29 @@ app.get('/api/profile', async (req, res) => {
         profile: getProfile(foundUser),
       });
     } else {
-      res.json({ result: "session expired" });
+      const guest = await generateGuestWithId(sessionId)
+      await data.addUser(guest);
+      res.json({ result: "success", profile: getProfile(guest)});
+      // res.json({ result: "session expired", profile: getProfile(guest)});
     }
   } else {
-    const guest = await generateGuest();
-    await data.addUser(guest);
-        console.log("None!");
+    const sessionId = req.headers['X-Guest-Id'];
+    if (sessionId === undefined || Array.isArray(sessionId)) {
+      res.json({ result: "not logged in" });
+    } else {
+      const guest = await generateGuestWithId(sessionId);
+      await data.addUser(guest);
+      res
+        .cookie(sessionCookieName, guest.session.id, sessionCookieOptions)
+        .json({ result: "success", profile: getProfile(guest)});
+    }
+    // const guest = await generateGuest();
+    // await data.addUser(guest);
+    //     console.log("None!");
 
-    res
-      .cookie(sessionCookieName, guest.session.id, sessionCookieOptions)
-      .json({ result: "success", profile: getProfile(guest)});
+    // res
+    //   .cookie(sessionCookieName, guest.session.id, sessionCookieOptions)
+    //   .json({ result: "success", profile: getProfile(guest)});
   }
 });
 

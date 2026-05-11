@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { frequencyUnits, isFrequencyUnit, isMonsterKind, monsterKinds, monsterName, randomMonsterKind } from "./types";
 import logo from "./assets/logo.png";
 import vampire from "./assets/vampire.webp";
@@ -6,46 +6,45 @@ import MiniNav from "./MiniNav";
 import Nav from "./Nav";
 import dayjs from "dayjs";
 import { buildStyles, CircularProgressbar } from "react-circular-progressbar";
+import { GuestIdContext } from "./GuestIdContext";
+import { get, post } from "./requests";
 /** @import { FrequencyUnit, Level, Monster } from "./types" */
 
-/**
- * 
- * @param {string} path
- * 
- */
-async function get(path) {
-  const res = await fetch(path);
-  return await res.json();
-}
-
-/**
- * 
- * @param {string} path
- * @param {any} body 
- * 
- */
-async function post(path, body) {
-  await fetch(path, {
-    method: "POST",
-    body: JSON.stringify(body),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-}
 
 /**
  * @typedef {"hero" | "task" | "loading"} HomeMode
  */
 
+/**
+ * @typedef {(monsters: Monster[]) => void} SetMonsters
+ */
+
+/**
+ * @typedef {(callback: ((monsters: Monster[]) => Monster[])) => void} UpdateMonsters
+ */
+
+/**
+ * 
+ * @typedef {{
+ *   list: Monster[]
+ *   set: (monsters: Monster[]) => void
+ *   update: (callback: ((monsters: Monster[]) => Monster[])) => void
+ *   setMonster: (monster: Monster) => void
+ *   deleteMonster: (monster: Monster) => void
+ * }} MonsterProps
+ */
+
 function Home() {
   const [task, setTask] = useState("");
+  const [hp, setHp] = useState(null);
+  const [xp, setXp] = useState(null);
   const [monsters, setMonsters] = useState(/** @type {Monster[]} */ ([]));
   const [didSubmitTask, setDidSubmitTask] = useState(false);
   const [mode, setMode] = useState(/** @type {HomeMode} */ ("loading"));
+  const guestId = useContext(GuestIdContext);
 
   useEffect(() => {
-    get('/api/profile').then(data => {
+    get('/api/profile', guestId).then(data => {
       console.log(data);
       const monsters = data?.profile?.monsters;
       if (Array.isArray(monsters)) {
@@ -63,9 +62,10 @@ function Home() {
    * 
    * @param {Monster[]} monsters 
    */
-  function updateMonsters(monsters) {
-    post('/api/monsters', { monsters });
+  function saveMonsters(monsters) {
+    post('/api/monsters', guestId, { monsters });
     setMonsters(monsters);
+    console.log('haaaa')
   }
 
   function submitTask() {
@@ -99,7 +99,7 @@ function Home() {
     const frequencyUnit = 'second';
     const deadline = getDeadline(frequencyMagnitude, frequencyUnit);
     const hp = 2;
-    updateMonsters([
+    saveMonsters([
       ...monsters,
       {
         id,
@@ -116,7 +116,35 @@ function Home() {
     ]);
     setTask("");
     setDidSubmitTask(true);
+            console.log("hoo hey");
+
   }
+
+  
+  /** @type {MonsterProps} */
+  const monsterProps = {
+    list: monsters,
+    set: saveMonsters,
+    update(callback) {
+      setMonsters(monsters => {
+        const newMonsters = callback(monsters);
+        post('/api/monsters', guestId, { monsters: newMonsters });
+        return newMonsters;
+      });
+    },
+    setMonster(newMonster) {
+      this.set(monsters.map(found => {
+        if (found.id === newMonster.id) {
+          return newMonster;
+        } else {
+          return found;
+        }
+      }));
+    },
+    deleteMonster(monster) {
+      this.set(this.list.filter(found => found.id !== monster.id));
+    }
+  };
   return (
     <>
       <title>Task Slayer</title>
@@ -128,7 +156,7 @@ function Home() {
             <></> :
             <Hero didSubmitTask={didSubmitTask} />
           }
-          <MonsterSection monsters={monsters} task={task} setTask={setTask} submitTask={submitTask} setMonsters={updateMonsters} />
+          <MonsterSection monsters={monsterProps} task={task} setTask={setTask} submitTask={submitTask} />
         </>
       }
     </>
@@ -156,15 +184,14 @@ function Hero({ didSubmitTask }) {
 /**
  * 
  * @param {{
- *   monsters: Monster[]
+ *   monsters: MonsterProps
  *   task: string
  *   setTask: (task: string) => void
  *   submitTask: () => void
- *   setMonsters: (monsters: Monster[]) => void
  * }} props 
  * @returns 
  */
-function MonsterSection({ monsters, task, setTask, submitTask, setMonsters }) {
+function MonsterSection({ monsters, task, setTask, submitTask }) {
   /** @type {React.ChangeEventHandler<HTMLInputElement, HTMLInputElement>} */
   function onChangeTask(e) {
     setTask(e.target.value);
@@ -187,9 +214,9 @@ function MonsterSection({ monsters, task, setTask, submitTask, setMonsters }) {
           />
         </form>
         <div className="home-monsters">
-          {monsters.map(m => {
+          {monsters.list.map(m => {
             return (
-              <Monster key={m.id} monster={m} monsters={monsters} setMonsters={setMonsters} />
+              <Monster key={m.id} monster={m} monsters={monsters} />
             );
           })}
         </div>
@@ -202,11 +229,10 @@ function MonsterSection({ monsters, task, setTask, submitTask, setMonsters }) {
  * 
  * @param {{
  *   monster: Monster
- *   monsters: Monster[]
- *   setMonsters: (monsters: Monster[]) => void
+ *   monsters: MonsterProps
  * }} props 
  */
-function Monster({ monster, monsters, setMonsters }) {
+function Monster({ monster, monsters }) {
   const [editing, setEditing] = useState(false);
   function switchToEdit() {
     setEditing(true);
@@ -215,44 +241,84 @@ function Monster({ monster, monsters, setMonsters }) {
     setEditing(false);
   }
   return editing ?
-    <MonsterEdit monster={monster} monsters={monsters} setMonsters={setMonsters} switchToView={switchToView} /> :
-    <MonsterView monster={monster} monsters={monsters} setMonsters={setMonsters} switchToEdit={switchToEdit} />
+    <MonsterEdit monster={monster} monsters={monsters} switchToView={switchToView} /> :
+    <MonsterView monster={monster} monsters={monsters} switchToEdit={switchToEdit} />
 }
 
 /**
  * 
  * @param {{
  *   monster: Monster
- *   monsters: Monster[]
- *   setMonsters: (monsters: Monster[]) => void
+ *   monsters: MonsterProps
  *   switchToEdit: () => void
  * }} props 
  */
-function MonsterView({ monster, monsters, setMonsters, switchToEdit }) {
+function MonsterView({ monster, monsters, switchToEdit }) {
+  const [_, setTime] = useState(Date.now());
   const name = monsterName(monster);
-  /**
-   * 
-   * @param {Monster} newMonster 
-   */
-  function setMonster(newMonster) {
-    setMonsters(monsters.map(found => {
-      if (found.id === monster.id) {
-        return newMonster;
-      } else {
-        return found;
-      }
-    }));
-  }
   function attack() {
     const newHp = Math.max(monster.currentHp - 1, 0);
-    setMonster({
-      ...monster,
-      currentHp: newHp,
-      deadline: tryAdvanceDeadline(monster),
-    });
+    console.log(newHp);
+
+
+    if (newHp === 0) {
+      monsters.setMonster({
+        ...monster,
+        currentHp: newHp,
+      });
+    } else {
+      const newDeadline = tryAdvanceDeadline(monster);
+      if (newDeadline !== null) {
+        console.log(dayjs(newDeadline).format("mm:ss"));
+      }
+      monsters.setMonster({
+        ...monster,
+        currentHp: newHp,
+        deadline: newDeadline,
+      });
+    }
   }
   const level = formatLevel(monster.level);
   const hp = monster.currentHp / monster.maxHp * 100;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(Date.now());
+      monsters.update(monsters => {
+        return monsters.map(found => {
+          if (found.id !== monster.id) return found;
+          if (found.deadline === null) return found;
+          const frequencyMagnitude = parseFrequencyMagnitude(found.frequencyMagnitude);
+          if (frequencyMagnitude === null) {
+            return found;
+          }
+          const deadline = found.deadline;
+          if (Date.now() < deadline) return found;
+          const newDeadline = getDeadline(frequencyMagnitude, found.frequencyUnit);
+          if (found.currentHp === 0) {
+            const hp = found.currentHp === 0 ? found.maxHp : found.currentHp;
+            const level = randomLevel();
+            console.log("revivve");
+            return {
+              ...found,
+              currentHp: hp,
+              level,
+              deadline: newDeadline,
+            };
+          } else {
+            console.log("chaneg");
+            return {
+              ...found,
+              deadline: newDeadline,
+            };
+          }
+        });
+      });
+    }, 67);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <div className="font-sans p-2 bg-slate-700 rounded-sm text-slate-100" key={monster.id}>
@@ -269,7 +335,7 @@ function MonsterView({ monster, monsters, setMonsters, switchToEdit }) {
               </button>
             </div>
             <div>{monster.task}</div>
-            <MonsterFrequency monster={monster} setMonster={setMonster} />
+            <MonsterFrequency monsters={monsters} monster={monster} />
             <div className="flex flex-col grow justify-end gap-y-2 items-center mt-2">
               <div className="w-full h-1.5 bg-gray-500 rounded-[3px]">
                 <div
@@ -293,15 +359,6 @@ function MonsterView({ monster, monsters, setMonsters, switchToEdit }) {
  * }} props 
  */
 function AttackButtonOrStatus({ monster, attack }) {
-  const [_, setTime] = useState(Date.now());
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTime(Date.now());
-    }, 67);
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
   return (
     monster.currentHp === 0 ?
       <div className="flex bg-green-800 h-7 rounded-[14px] w-full items-center justify-center" >Slain</div> :
@@ -314,19 +371,19 @@ function AttackButtonOrStatus({ monster, attack }) {
 /**
  * 
  * @param {{
+ *   monsters: MonsterProps
  *   monster: Monster
- *   setMonster: (monster: Monster) => void
  * }} props 
  */
-function MonsterFrequency({ monster, setMonster }) {
+function MonsterFrequency({ monsters, monster }) {
   const frequencyMagnitude = parseFrequencyMagnitude(monster.frequencyMagnitude);
   const frequencyResult = formatFrequency(monster.frequencyMagnitude, monster.frequencyUnit);
   return (
     (frequencyResult.invalidMagnitude || frequencyMagnitude === null || monster.deadline === null) ? 
       <div className="text-red-300">Invalid frequency</div> :
       <ValidMonsterFrequency
+        monsters={monsters}
         monster={monster}
-        setMonster={setMonster}
         frequencyMagnitude={frequencyMagnitude}
         frequencyString={frequencyResult.value}
         deadline={monster.deadline}
@@ -337,46 +394,79 @@ function MonsterFrequency({ monster, setMonster }) {
 /**
  * 
  * @param {{
+ *   monsters: MonsterProps
  *   monster: Monster
- *   setMonster: (monster: Monster) => void
  *   frequencyMagnitude: number
  *   frequencyString: string
  *   deadline: number
  * }} props 
  */
-function ValidMonsterFrequency({ monster, setMonster, frequencyMagnitude, frequencyString, deadline }) {
-  const [time, setTime] = useState(Date.now());
+function ValidMonsterFrequency({ monsters, monster, frequencyMagnitude, frequencyString, deadline }) {
+  // const [time, setTime] = useState(Date.now());
   const period = getPeriod(frequencyMagnitude, monster.frequencyUnit);
   const periodEnd = isTaskCompleted(monster) ? 
     (deadline - period) :
     deadline;
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (Date.now() > periodEnd) {
-        const deadline = tryGetDeadline(monster.frequencyMagnitude, monster.frequencyUnit);
-        if (monster.currentHp === 0) {
-          const hp = monster.currentHp === 0 ? monster.maxHp : monster.currentHp;
-          const level = randomLevel();
-          setMonster({
-            ...monster,
-            currentHp: hp,
-            level,
-            deadline,
-          });
-        } else {
-          setMonster({
-            ...monster,
-            deadline,
-          });
-        }
-      }
-      setTime(Date.now());
-    }, 67);
-    return () => {
-      clearInterval(interval);
-    };
-  }, [monster]);
-  const timeLeft = periodEnd - time;
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setTime(Date.now());
+  //     monsters.update(monsters => {
+  //       return monsters.map(found => {
+  //         if (found.id !== monster.id) return found;
+  //         if (found.deadline === null) return found;
+  //         const frequencyMagnitude = parseFrequencyMagnitude(found.frequencyMagnitude);
+  //         if (frequencyMagnitude === null) {
+  //           return found;
+  //         }
+  //         const deadline = found.deadline;
+  //         const period = getPeriod(frequencyMagnitude, found.frequencyUnit);
+  //         const periodEnd = isTaskCompleted(found) ? 
+  //           (deadline - period) :
+  //           deadline;
+  //         if (Date.now() < periodEnd) return found;
+  //         const newDeadline = getDeadline(frequencyMagnitude, found.frequencyUnit);
+  //         if (found.currentHp === 0) {
+  //           const hp = found.currentHp === 0 ? found.maxHp : found.currentHp;
+  //           const level = randomLevel();
+  //           return {
+  //             ...found,
+  //             currentHp: hp,
+  //             level,
+  //             deadline: newDeadline,
+  //           };
+  //         } else {
+  //           return {
+  //             ...found,
+  //             deadline: newDeadline,
+  //           };
+  //         }
+  //       });
+  //     });
+  //     // if (Date.now() > periodEnd) {
+  //     //   const deadline = tryGetDeadline(monster.frequencyMagnitude, monster.frequencyUnit);
+  //     //   if (monster.currentHp === 0) {
+  //     //     const hp = monster.currentHp === 0 ? monster.maxHp : monster.currentHp;
+  //     //     const level = randomLevel();
+  //     //     setMonster({
+  //     //       ...monster,
+  //     //       currentHp: hp,
+  //     //       level,
+  //     //       deadline,
+  //     //     });
+  //     //   } else {
+  //     //     setMonster({
+  //     //       ...monster,
+  //     //       deadline,
+  //     //     });
+  //     //   }
+  //     // }
+  //     // setTime(Date.now());
+  //   }, 67);
+  //   return () => {
+  //     clearInterval(interval);
+  //   };
+  // }, []);
+  const timeLeft = periodEnd - Date.now();
   const p = Math.max(Math.min(timeLeft / period, 1), 0);
   return (
     <div className="flex items-center gap-x-2">
@@ -620,23 +710,22 @@ function padLevelNumber(level) {
  * 
  * @param {{
  *   monster: Monster
- *   monsters: Monster[]
- *   setMonsters: (monsters: Monster[]) => void
+ *   monsters: MonsterProps
  *   switchToView: () => void
  * }} props 
  */
-function MonsterEdit({ monster, monsters, setMonsters, switchToView }) {
+function MonsterEdit({ monster, monsters, switchToView }) {
   const name = monsterName(monster);
   /** @type {React.ChangeEventHandler<HTMLInputElement, HTMLInputElement>} */
   function onChangeTaskName(e) {
-    setMonster({
+    monsters.setMonster({
       ...monster,
       taskName: e.target.value,
     });
   }
   /** @type {React.ChangeEventHandler<HTMLInputElement, HTMLInputElement>} */
   function onChangeTask(e) {
-    setMonster({
+    monsters.setMonster({
       ...monster,
       task: e.target.value,
     });
@@ -647,7 +736,7 @@ function MonsterEdit({ monster, monsters, setMonsters, switchToView }) {
     if (!isMonsterKind(kind)) {
       return;
     }
-    setMonster({
+    monsters.setMonster({
       ...monster,
       kind,
     });
@@ -656,7 +745,7 @@ function MonsterEdit({ monster, monsters, setMonsters, switchToView }) {
   function onChangeFrequencyMagnitude(e) {
     const frequencyMagnitude = e.target.value;
     const deadline = tryGetDeadline(frequencyMagnitude, monster.frequencyUnit);
-    setMonster({
+    monsters.setMonster({
       ...monster,
       frequencyMagnitude,
       deadline,
@@ -669,28 +758,15 @@ function MonsterEdit({ monster, monsters, setMonsters, switchToView }) {
       return;
     }
     const deadline = tryGetDeadline(monster.frequencyMagnitude, frequencyUnit);
-    setMonster({
+    monsters.setMonster({
       ...monster,
       frequencyUnit,
       deadline,
     });
   }
-  /**
-   * 
-   * @param {Monster} newMonster 
-   */
-  function setMonster(newMonster) {
-    setMonsters(monsters.map(found => {
-      if (found.id === monster.id) {
-        return newMonster;
-      } else {
-        return found;
-      }
-    }));
-  }
 
   function deleteMonster() {
-    setMonsters(monsters.filter(found => found.id !== monster.id));
+    monsters.deleteMonster(monster);
   }
   return (
     <div className="font-sans p-2 bg-slate-700 rounded-sm text-slate-100" key={monster.id}>

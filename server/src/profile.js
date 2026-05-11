@@ -7,6 +7,8 @@
 export function getProfile(user) {
   return {
     displayName: displayName(user),
+    hp: user.hp,
+    xp: user.xp,
     class_: user.class_,
     monsters: user.monsters,
   };

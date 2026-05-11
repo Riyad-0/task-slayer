@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import warriorImage from "./assets/warrior.webp";
 import scholarImage from "./assets/scholar.png";
 import bardImage from "./assets/bard.webp";
@@ -9,14 +9,16 @@ import logo from "./assets/logo.png";
 import { Link } from "react-router-dom";
 import MiniNav from "./MiniNav";
 import Nav from "./Nav";
+import { GuestIdContext } from "./GuestIdContext";
+import { get, post } from "./requests";
 /** @import { Class } from "./types" */
 
 function ClassPage() {
   const [playerClass, setPlayerClass] = useState(/** @type {Class | null} */ (null));
   const [displayedClass, setDisplayedClass] = useState(defaultClass);
+  const guestId = useContext(GuestIdContext);
   useEffect(() => {
-    fetch("/api/profile/")
-      .then(res => res.json())
+    get("/api/profile/", guestId)
       .then(data => {
         const class_ = data?.profile?.class_;
         if (isClass(class_)) {
@@ -26,15 +28,18 @@ function ClassPage() {
       });
   }, []);
   async function onClickSelect() {
-    await fetch("/api/class", {
-      method: "POST",
-      body: JSON.stringify({
-        class_: displayedClass
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-      }
+    await post("/api/class", guestId, {
+      class_: displayedClass
     });
+    // await fetch("/api/class", {
+    //   method: "POST",
+    //   body: JSON.stringify({
+    //     class_: displayedClass
+    //   }),
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   }
+    // });
     setPlayerClass(displayedClass);
   }
   const onClickPrevClass = () => {

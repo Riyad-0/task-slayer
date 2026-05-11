@@ -40,6 +40,8 @@ async function getUsers() {
             id: dbUser._id,
             created: dbUser.sessionCreated,
           },
+          hp: dbUser.hp,
+          xp: dbUser.xp,
           class_: dbUser.class_,
           monsters: dbUser.monsters,
         };
@@ -61,6 +63,8 @@ async function addUser(user) {
       await DbUser.insertOne({
         _id: user.session.id,
         sessionCreated: user.session.created,
+        hp: user.hp,
+        xp: user.xp,
         class_: user.class_,
         monsters: user.monsters,
       });
@@ -79,10 +83,12 @@ async function updateUser(user) {
       break;
     }
     case "remote": {
-      DbUser.findByIdAndUpdate(user.session.id, {
+      await DbUser.findByIdAndUpdate(user.session.id, {
+        hp: user.hp,
+        xp: user.xp,
         class_: user.class_,
         monsters: user.monsters,
-      });
+      }).exec();
       break;
     }
   }

@@ -14,6 +14,37 @@ export async function generateGuest() {
   return {
     session: await createSession(),
     class_: "Scholar",
+    hp: 10,
+    xp: 0,
+    monsters: [
+      // {
+      //   name: "Dust Golem",
+      //   task: "fold the mountain",
+      //   level: 8,
+      //   currentHp: 5,
+      //   maxHp: 10,
+      // },
+      // {
+      //   name: "Caffeine Wraith",
+      //   task: "no coffee after 2pm",
+      //   level: "boss",
+      //   currentHp: 1,
+      //   maxHp: 1,
+      // },
+    ]
+  }
+}
+
+/**
+ * @param {string} id
+ * @returns {Promise<Guest>}
+ */
+export async function generateGuestWithId(id) {
+  return {
+    session: await createSessionWithId(id),
+    class_: "Scholar",
+    hp: 10,
+    xp: 0,
     monsters: [
       // {
       //   name: "Dust Golem",
@@ -37,6 +68,17 @@ export async function generateGuest() {
 async function createSession() {
   return {
     id: await generateSessionId(),
+    created: Date.now(),
+  };
+}
+
+/**
+ * @param {string} id
+ * @returns {Promise<Session>}
+ */
+async function createSessionWithId(id) {
+  return {
+    id,
     created: Date.now(),
   };
 }

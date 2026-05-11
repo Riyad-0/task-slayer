@@ -1,6 +1,8 @@
 /**
  * @typedef {object} Profile
  * @property {string} displayName
+ * @property {number} hp
+ * @property {number} xp
  * @property {Class} class_
  * @property {Monster[]} monsters
  */
@@ -12,6 +14,8 @@
 /**
  * @typedef {object} Guest
  * @property {Session} session
+ * @property {number} hp
+ * @property {number} xp
  * @property {Class} class_
  * @property {Monster[]} monsters
  */
